@@ -1,1 +1,3 @@
 .dvenv
+dvenv/
+*.pyc
