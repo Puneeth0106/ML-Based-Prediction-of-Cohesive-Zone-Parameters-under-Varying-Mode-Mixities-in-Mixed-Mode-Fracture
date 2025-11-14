@@ -1,8 +1,10 @@
 # Parameter Prediction from Simulation-Derived Cohesive-Zone Features
 
-## Abstract
+## **Abstract**
+This work presents a reproducible data-processing and machine-learning pipeline for predicting fracture-mechanics parameters from simulation traces. The pipeline extracts physically meaningful features from displacement–force responses, pairs them with target cohesive-zone parameters, and evaluates several regression models—including Support Vector Regression (SVR), Random Forests (RF), and XGBoost. The framework supports automatic feature extraction, dataset assembly, hyperparameter tuning, model persistence, and visual performance assessment. The resulting workflow enables rapid experimentation and systematic comparison of ML models for surrogate prediction in fracture simulations. 
 
-This repository provides a reproducible data-processing and machine-learning pipeline for predicting cohesive-zone parameters from simulation traces. The pipeline automates feature extraction from displacement–force curves, assembles training datasets, performs hyperparameter tuning for multiple regressors, persists trained artifacts, and produces diagnostic plots for model evaluation.
+## **Introduction**
+ Cohesive-zone models are widely used to characterize fracture processes through parameters such as peak traction (σI, σII) and energy release rates (GI, GII). Obtaining these parameters through full-scale numerical simulations is computationally expensive. To reduce this cost, we propose a supervised machine-learning pipeline that predicts cohesive-zone parameters directly from low-dimensional features extracted from simulation trace data. This repository implements the complete workflow—from data ingestion to model training and evaluation—and provides a reproducible framework suitable for research, benchmarking, and extension. 
 
 ## Quick overview
 
@@ -110,7 +112,20 @@ Full CSVs in `data/output_results/` contain per-fold values and detailed metrics
 
 ## Visuals
 
-Predicted-vs-actual plots are saved in `figures/` (e.g. `figures/svr_test.png`, `figures/rf_test.png`, `figures/xgb_test.png`).
+Predicted-vs-actual plots are saved in `figures/`. Below are the primary diagnostic figures (train vs test) for each model.
+
+### SVR
+
+![SVR train](figures/svr_train.png) ![SVR test](figures/svr_test.png)
+
+### Random Forest
+
+![RF train](figures/rf_train.png) ![RF test](figures/rf_test.png)
+
+### XGBoost
+
+![XGB train](figures/xgb_train.png) ![XGB test](figures/xgb_test.png)
+
 
 ## Inference
 
@@ -124,8 +139,7 @@ Saved models are joblib dictionaries containing the model, scaler and metadata. 
 ## Contributing & Next steps
 
 - Add unit tests for `predict.py` edge cases.
-- Add `requirements.txt` (if missing) and/or `pyproject.toml`.
-- Optionally convert this README to a LaTeX paper or generate a short PDF abstract.
+- Add `requirements.txt` (if missing)
 
 ## Acknowledgements
 
