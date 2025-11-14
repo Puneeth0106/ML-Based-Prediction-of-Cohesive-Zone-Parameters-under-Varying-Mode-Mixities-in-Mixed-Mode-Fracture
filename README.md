@@ -1,3 +1,153 @@
+# Parameter Prediction from Simulation-Derived Cohesive-Zone Features
+
+## Abstract
+
+This work presents a reproducible data-processing and machine-learning pipeline for predicting fracture-mechanics parameters from simulation traces. The pipeline extracts physically meaningful features from displacement–force responses, pairs them with target cohesive-zone parameters, and evaluates several regression models—including Support Vector Regression (SVR), Random Forests (RF), and XGBoost. The framework supports automatic feature extraction, dataset assembly, hyperparameter tuning, model persistence, and visual performance assessment. The resulting workflow enables rapid experimentation and systematic comparison of ML models for surrogate prediction in fracture simulations.
+
+## 1. Introduction
+
+Cohesive-zone models are widely used to characterize fracture processes through parameters such as peak traction (`σI`, `σII`) and energy release rates (`GI`, `GII`). Obtaining these parameters through full-scale numerical simulations is computationally expensive. To reduce this cost, we propose a supervised machine-learning pipeline that predicts cohesive-zone parameters directly from low-dimensional features extracted from simulation trace data.
+
+This repository implements the complete workflow—from data ingestion to model training and evaluation—and provides a reproducible framework suitable for research, benchmarking, and extension.
+
+## 2. Workflow Overview
+
+The overall pipeline consists of four stages:
+
+1. Feature Extraction — displacement–force traces are processed to compute summary features (peak force `Pmax`, characteristic displacement `δ*`, area under the curve `At`, initial slope `m`).
+2. Dataset Assembly — extracted features are merged with target cohesive-zone parameters stored in `data/target_features/increasing_targets.csv`.
+3. Model Training and Hyperparameter Tuning — SVR, RF, and XGBoost models are optimized through cross-validated grid searches.
+4. Evaluation and Inference — trained models are evaluated with R² and MAPE metrics and saved as portable artifacts used for downstream inference.
+
+## 3. Repository Structure
+
+Core components
+
+- `predict.py` — Primary feature-extraction and dataset-construction script.
+- `src/data_loading.py` — Utilities for loading and validating input data.
+- `src/model_prediction.py` — Model training pipeline with hyperparameter tuning and visualization helpers.
+- `src/predict_from_models.py` — Inference script for applying trained models to new samples.
+
+Data and output directories
+
+- `data/Simulation/` — raw simulation traces (`sample_*.csv`).
+- `data/target_features/increasing_targets.csv` — ground-truth cohesive-zone parameters.
+- `data/combined_dataset.csv` — training dataset (features + targets).
+- `data/output_results/` — grid-search outputs and summary files.
+- `models/` — serialized models, scalers, and metadata (joblib).
+- `figures/` — saved predicted-vs-actual plots.
+
+## 4. Methods
+
+### 4.1 Feature Extraction
+
+Each simulation file is scanned for displacement and force columns, tolerating minor variations in naming. Numerical arrays are processed to compute the following features, which are saved to `data/features_only.csv` and later joined with target parameters:
+
+| Feature | Description |
+|--------:|:------------|
+| `Pmax`  | Maximum force value |
+| `δ*`    | Displacement at peak force |
+| `At`    | Integral of force–displacement curve |
+| `m`     | Initial tangent stiffness (slope) |
+
+### 4.2 Model Training
+
+All models operate on standardized features (`StandardScaler`). Hyperparameter tuning uses k-fold cross-validation across predefined grids:
+
+- SVR: exploring combinations of `(ε, C)`.
+- Random Forest: varying `n_estimators`.
+- XGBoost: grid over `(n_estimators, max_depth, learning_rate)`.
+
+For each configuration, R² and MAPE are computed for all target parameters, and average metrics are logged to CSV files in `data/output_results/`.
+
+## 5. Results
+
+### 5.1 SVR Tuning Summary
+
+Example aggregated performance (from `data/output_results/svr_grid_combined.csv`):
+
+| ε     | C    | mean_R² | mean_MAPE (%) |
+|-----:|-----:|--------:|--------------:|
+| 0.01 | 0.1  |  −15.32 |         11.94 |
+| 0.02 | 0.7  |   −9.61 |          7.48 |
+| 0.03 | 1.0  |   −8.65 |          6.82 |
+| 0.04 | 2.0  |   −5.14 |          5.78 |
+| 0.05 | 3.0  |   −3.82 |          5.46 |
+
+### 5.2 Random Forest Tuning
+
+Per-`n_estimators` mean MAPE (from `data/output_results/rf_trees_cv_results.csv`):
+
+| n_estimators | mean_MAPE (%) |
+|-------------:|--------------:|
+| 5            | 3.7334        |
+| 10           | 3.5512        |
+| 36           | 3.1234        |
+| 82           | 3.1412        |
+| 140          | 3.0031        |
+| 260          | **2.9566**    |
+| 480          | 3.0069        |
+| 650          | 2.9765        |
+
+### 5.3 XGBoost Tuning
+
+Grid search summary (from `data/output_results/xgb_grid_results.csv`):
+
+| n_estimators | max_depth | learning_rate | mean_MAPE (%) |
+|-------------:|:---------:|:-------------:|--------------:|
+| 50           | 5         | 0.10          | 3.3406        |
+| 100          | 5         | 0.10          | 3.5324        |
+| 200          | 5         | 0.10          | 3.5533        |
+| 50           | 3         | 0.10          | 3.8557        |
+| 100          | 3         | 0.10          | 4.0196        |
+| 200          | 3         | 0.10          | 4.0374        |
+| 200          | 5         | 0.01          | 4.2928        |
+| 200          | 3         | 0.01          | 4.7379        |
+| 100          | 5         | 0.01          | 8.1027        |
+| 100          | 3         | 0.01          | 8.5051        |
+| 50           | 5         | 0.01          | 11.9684       |
+| 50           | 3         | 0.01          | 12.2566       |
+
+### 5.4 Visual Evaluation
+
+Predicted-vs-actual plots (saved under `figures/`) illustrate model performance for each target parameter (`σI`, `GI`, `σII`, `GII`). These figures provide a qualitative assessment of correlation and error distribution.
+
+## 6. Inference
+
+Trained models, together with scalers and feature metadata, are stored as joblib dictionaries in `models/`. Run inference with:
+
+```bash
+python src/predict_from_models.py \
+  --sample-file data/Simulation/sample_1.csv \
+  --models-dir models \
+  --out data/output_results/predictions_from_models.csv
+```
+
+The script re-extracts features, applies the correct scaling transformation, and writes predictions to the specified output CSV.
+
+## 7. Discussion and Recommendations
+
+RF and XGBoost generally outperform SVR on the present dataset in terms of MAPE. The pipeline is modular and extensible — suggestions include nested cross-validation, uncertainty quantification, additional model families (LightGBM, neural nets), and experiment tracking (MLflow, Weights & Biases).
+
+## 8. Conclusion
+
+This repository provides a reproducible environment for predicting cohesive-zone parameters from simulation data. By automating feature extraction, dataset construction, model optimization, visualization, and inference, the workflow supports systematic surrogate-model development for fracture simulation studies.
+
+## 9. Suggested Extensions
+
+- Add unit tests for feature extraction robustness.
+- Incorporate additional models (LightGBM, MLP, Gaussian Processes).
+- Integrate experiment tracking (Weights & Biases, MLflow).
+- Provide Docker and `pyproject.toml` for reproducible environments.
+- Extend to multi-fidelity or physics-informed learning frameworks.
+
+## Acknowledgements
+
+[Insert advisor/group/lab acknowledgement if applicable.]
+
+---
+
+If you would like this converted to a LaTeX paper (IEEE/ACM/Elsevier), a 2-page extended abstract, or a poster layout, tell me which format and I'll generate it.
 # Parameter_prediction
 
 This repository provides a  data-processing and machine-learning pipeline
@@ -223,17 +373,35 @@ SVR aggregated (per (epsilon, C)) — `data/output_results/svr_grid_combined.csv
 | 0.04    | 2.0 |  -5.1397 |  5.7769           |
 | 0.05    | 3.0 |  -3.8156 |  5.4579           |
 
-Random Forest tuning (`data/output_results/rf_trees_cv_results.csv`) — mean MAPE per `n_estimators` (last column). Best observed:
+Random Forest tuning (`data/output_results/rf_trees_cv_results.csv`) — per-`n_estimators` mean MAPE (last column):
 
 | n_estimators | mean_MAPE_percent |
 |-------------:|------------------:|
-| 260          | 2.9566            |
+| 5           | 3.7334061192256796 |
+| 10          | 3.5511693461971    |
+| 36          | 3.123350339664438  |
+| 82          | 3.141227276471558  |
+| 140         | 3.0031412245738154 |
+| 260         | 2.9566413921634713 |
+| 480         | 3.0069444146553392 |
+| 650         | 2.9765428263157334 |
 
-XGBoost tuning (`data/output_results/xgb_grid_results.csv`) — best observed:
+XGBoost tuning (`data/output_results/xgb_grid_results.csv`) — full grid results:
 
 | n_estimators | max_depth | learning_rate | mean_MAPE_percent |
 |-------------:|:---------:|:-------------:|------------------:|
-| 50           | 5         | 0.1           | 3.3406            |
+| 50          | 5         | 0.1           | 3.340641378618129 |
+| 100         | 5         | 0.1           | 3.532382746875707 |
+| 200         | 5         | 0.1           | 3.553320590738006 |
+| 50          | 3         | 0.1           | 3.8557428656200643 |
+| 100         | 3         | 0.1           | 4.019602325870569 |
+| 200         | 3         | 0.1           | 4.037388055034631 |
+| 200         | 5         | 0.01          | 4.292752408959229 |
+| 200         | 3         | 0.01          | 4.737946086131571 |
+| 100         | 5         | 0.01          | 8.102686433461724 |
+| 100         | 3         | 0.01          | 8.505053040724977 |
+| 50          | 5         | 0.01          | 11.96836056746445 |
+| 50          | 3         | 0.01          | 12.256636200773077 |
 
 ### Figures (thumbnails)
 
