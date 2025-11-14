@@ -48,7 +48,7 @@ def hyper_tune_svr(X_df, y_df, cv_splits=30, out_dir=Path('data'), pairs: list |
     Returns best params dict {'C':..., 'epsilon':...} chosen by highest mean R2.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
-    default_epsilons = [0.01, 0.02, 0.03, 0.04, 0.05]
+    default_epsilons = [0.01, 0.02, 0.03]
     default_box_constants = [0.1, 0.7, 1, 2, 3]
     kf = KFold(n_splits=cv_splits, shuffle=True, random_state=42)
 

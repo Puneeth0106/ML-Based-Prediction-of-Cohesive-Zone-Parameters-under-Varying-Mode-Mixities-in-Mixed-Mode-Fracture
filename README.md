@@ -70,15 +70,18 @@ Metrics: per-target R² and MAPE; grid averages saved to `data/output_results/`.
 
 ## Results (selected summaries)
 
-SVR aggregated (selected rows from `data/output_results/svr_grid_combined.csv`):
 
-| ε    | C   | mean_R² | mean_MAPE (%) |
-|-----:|----:|--------:|--------------:|
-| 0.01 | 0.1 |  −15.32 |         11.94 |
-| 0.02 | 0.7 |   −9.61 |          7.48 |
-| 0.03 | 1.0 |   −8.65 |          6.82 |
-| 0.04 | 2.0 |   −5.14 |          5.78 |
-| 0.05 | 3.0 |   −3.82 |          5.46 |
+SVR results (subset saved to `data/output_results/scr-grid-results.csv`):
+
+| epsilon | C   | mean_R2            | mean_MAPE_percent |
+|-------:|:----:|-------------------:|------------------:|
+| 0.05   | 3.0 | 0.8743064336728488 | 5.149587181944799 |
+| 0.05   | 3.0 | 0.8633882467129478 | 4.794311383104367 |
+| 0.05   | 3.0 | 0.843886542726167  | 5.733743606191357 |
+| 0.04   | 2.0 | 0.8429488961046585 | 5.398882140672857 |
+| 0.04   | 2.0 | 0.8381061654636804 | 4.93839269667854  |
+| 0.04   | 2.0 | 0.8038159944689347 | 5.942952499355197 |
+| 0.05   | 3.0 | 0.7971318996647452 | 7.869296969669186 |
 
 Random Forest: mean MAPE by `n_estimators` (`data/output_results/rf_trees_cv_results.csv`):
 
@@ -89,7 +92,7 @@ Random Forest: mean MAPE by `n_estimators` (`data/output_results/rf_trees_cv_res
 | 36           | 3.1234        |
 | 82           | 3.1412        |
 | 140          | 3.0031        |
-| 260          | **2.9566**    |
+| 260          | 2.9566        |
 | 480          | 3.0069        |
 | 650          | 2.9765        |
 
