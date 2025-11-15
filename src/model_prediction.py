@@ -33,6 +33,16 @@ y = df[target_names]
 # split
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
+# Persist the test split so downstream scripts can reuse the exact same test set
+out_test_dir = Path('data') / 'output_results'
+out_test_dir.mkdir(parents=True, exist_ok=True)
+X_test.to_csv(out_test_dir / 'X_test.csv', index=False)
+y_test.to_csv(out_test_dir / 'y_test.csv', index=False)
+print(f"Saved test split to {out_test_dir / 'X_test.csv'} and {out_test_dir / 'y_test.csv'}")
+
+
+
+
 # Standardize inputs (important for SVR & ANN). We will use scaled features for all models.
 scaler = StandardScaler()
 X_train_s = scaler.fit_transform(X_train)

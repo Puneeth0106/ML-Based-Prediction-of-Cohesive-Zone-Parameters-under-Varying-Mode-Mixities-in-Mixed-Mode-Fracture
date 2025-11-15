@@ -143,6 +143,5 @@ Saved models are joblib dictionaries containing the model, scaler and metadata. 
 
 ## Acknowledgements
 
-Add advisor/group/lab acknowledgements here.
 
 ---
